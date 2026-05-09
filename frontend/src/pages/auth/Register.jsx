@@ -9,7 +9,7 @@ const roles = [
 ];
 
 export default function Register() {
-  const [form, setForm] = useState({ fullname: "", email: "", username: "", password: "", confirmPassword: "", role: "" });
+  const [form, setForm] = useState({ fullname: "", email: "", password: "", confirmPassword: "", role: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
@@ -21,7 +21,7 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.fullname || !form.email || !form.username || !form.password || !form.confirmPassword || !form.role) {
+    if (!form.fullname || !form.email || !form.password || !form.confirmPassword || !form.role) {
       setError("Please fill in all fields."); return;
     }
     if (form.password !== form.confirmPassword) { setError("Passwords do not match."); return; }
@@ -66,22 +66,17 @@ export default function Register() {
               <label className="auth-label">Full Name</label>
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">👤</span>
-                <input className="auth-input" type="text" name="fullname" placeholder="Enter your full name" value={form.fullname} onChange={handleChange} />
+                <input className="auth-input" type="text" name="fullname"
+                  placeholder="Enter your full name" value={form.fullname} onChange={handleChange} />
               </div>
             </div>
             <div className="auth-field">
               <label className="auth-label">Email</label>
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">✉️</span>
-                <input className="auth-input" type="email" name="email" placeholder="Enter your email" value={form.email} onChange={handleChange} />
+                <input className="auth-input" type="email" name="email"
+                  placeholder="Enter your email" value={form.email} onChange={handleChange} />
               </div>
-            </div>
-          </div>
-          <div className="auth-field">
-            <label className="auth-label">Username</label>
-            <div className="auth-input-wrap">
-              <span className="auth-input-icon">🪪</span>
-              <input className="auth-input" type="text" name="username" placeholder="Choose a username" value={form.username} onChange={handleChange} />
             </div>
           </div>
           <div className="auth-grid-2">
@@ -89,16 +84,22 @@ export default function Register() {
               <label className="auth-label">Password</label>
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">🔒</span>
-                <input className="auth-input" type={showPassword ? "text" : "password"} name="password" placeholder="Create a password" value={form.password} onChange={handleChange} />
-                <button type="button" className="auth-toggle-pw" onClick={() => setShowPassword(!showPassword)}>{showPassword ? "🙈" : "👁️"}</button>
+                <input className="auth-input" type={showPassword ? "text" : "password"}
+                  name="password" placeholder="Create a password" value={form.password} onChange={handleChange} />
+                <button type="button" className="auth-toggle-pw" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
               </div>
             </div>
             <div className="auth-field">
               <label className="auth-label">Confirm Password</label>
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">🔒</span>
-                <input className="auth-input" type={showConfirm ? "text" : "password"} name="confirmPassword" placeholder="Repeat your password" value={form.confirmPassword} onChange={handleChange} />
-                <button type="button" className="auth-toggle-pw" onClick={() => setShowConfirm(!showConfirm)}>{showConfirm ? "🙈" : "👁️"}</button>
+                <input className="auth-input" type={showConfirm ? "text" : "password"}
+                  name="confirmPassword" placeholder="Repeat your password" value={form.confirmPassword} onChange={handleChange} />
+                <button type="button" className="auth-toggle-pw" onClick={() => setShowConfirm(!showConfirm)}>
+                  {showConfirm ? "🙈" : "👁️"}
+                </button>
               </div>
             </div>
           </div>

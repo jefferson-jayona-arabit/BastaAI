@@ -10,25 +10,18 @@ const roles = [
 ];
 
 export default function Login() {
-  const [form, setForm] = useState({ username: "", password: "", role: "" });
+  const [form, setForm] = useState({ email: "", password: "", role: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setError("");
-  };
+  const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setError(""); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.username || !form.password || !form.role) {
-      setError("Please fill in all fields.");
-      return;
-    }
-    setLoading(true);
-    setError("");
+    if (!form.email || !form.password || !form.role) { setError("Please fill in all fields."); return; }
+    setLoading(true); setError("");
     try {
       const data = await loginUser(form);
       localStorage.setItem("token", data.token);
@@ -53,14 +46,6 @@ export default function Login() {
         </div>
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-subtitle">Sign in to access the tourism dashboard</p>
-        <div className="auth-demo-box">
-          <span className="auth-demo-icon">ℹ️</span>
-          <div>
-            <strong>Demo Credentials</strong>
-            <p>Username: <b>admin</b> or <b>lgu</b></p>
-            <p>Password: <b>basta2024</b></p>
-          </div>
-        </div>
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-field">
             <label className="auth-label">Role</label>
@@ -75,11 +60,11 @@ export default function Login() {
             </div>
           </div>
           <div className="auth-field">
-            <label className="auth-label">Username</label>
+            <label className="auth-label">Email</label>
             <div className="auth-input-wrap">
-              <span className="auth-input-icon">👤</span>
-              <input className="auth-input" type="text" name="username"
-                placeholder="Enter your username" value={form.username} onChange={handleChange} />
+              <span className="auth-input-icon">✉️</span>
+              <input className="auth-input" type="email" name="email"
+                placeholder="Enter your email" value={form.email} onChange={handleChange} />
             </div>
           </div>
           <div className="auth-field">
