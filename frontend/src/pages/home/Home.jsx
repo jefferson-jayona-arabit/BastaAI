@@ -55,7 +55,13 @@ export default function Home() {
           </div>
           <div className={`nav-links ${menuOpen ? "open" : ""}`}>
             {navLinks.map((l) => (
-              <a key={l} href={`#${l.toLowerCase()}`} className="nav-link">{l}</a>
+              <a key={l}
+                  href={`#${l.toLowerCase()}`}
+                  className="nav-link"
+                  onClick={l === "Destinations" ? (e) => { e.preventDefault(); navigate("/destinations"); } : undefined}
+                >
+                  {l}
+                </a>
             ))}
           </div>
           <button className="nav-login-btn" onClick={() => navigate("/login")}>Login</button>
