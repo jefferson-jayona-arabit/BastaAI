@@ -17,7 +17,7 @@ const register = async (req, res) => {
         return res.status(400).json({ error: 'All fields are required.' });
     }
 
-    const allowedRoles = ['tourist', 'establishment'];
+    const allowedRoles = ['tourist', 'establishment', 'lgu'];
     if (!allowedRoles.includes(role)) {
         return res.status(400).json({ error: 'Invalid role. Must be tourist or establishment.' });
     }

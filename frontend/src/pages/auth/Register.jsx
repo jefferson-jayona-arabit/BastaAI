@@ -4,8 +4,9 @@ import { registerUser } from "../../services/authService";
 import "../../styles/auth.css";
 
 const roles = [
-  { value: "tourist", label: "Tourist", icon: "🌍" },
+  { value: "tourist",       label: "Tourist",       icon: "🌍" },
   { value: "establishment", label: "Establishment", icon: "🏨" },
+  { value: "lgu",           label: "LGU",           icon: "🏛️" },
 ];
 
 export default function Register() {

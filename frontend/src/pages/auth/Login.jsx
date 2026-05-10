@@ -4,9 +4,10 @@ import { loginUser } from "../../services/authService";
 import "../../styles/auth.css";
 
 const roles = [
-  { value: "tourist", label: "Tourist", icon: "🌍" },
-  { value: "admin", label: "Admin", icon: "🛡️" },
+  { value: "tourist",       label: "Tourist",       icon: "🌍" },
+  { value: "admin",         label: "Admin",         icon: "🛡️" },
   { value: "establishment", label: "Establishment", icon: "🏨" },
+  { value: "lgu",           label: "LGU",           icon: "🏛️" },
 ];
 
 export default function Login() {
@@ -27,9 +28,10 @@ export default function Login() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       const role = data.user.role;
-      if (role === "admin") navigate("/admin/dashboard");
+      if (role === "admin")         navigate("/admin/dashboard");
+      else if (role === "lgu")      navigate("/lgu/dashboard");
       else if (role === "establishment") navigate("/establishment/dashboard");
-      else navigate("/tourist/dashboard");
+      else                          navigate("/tourist/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {
