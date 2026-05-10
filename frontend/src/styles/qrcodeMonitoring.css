@@ -1,0 +1,129 @@
+/* ===== QR CODE MONITORING PAGE ===== */
+
+/* Page Header */
+.qr-header { margin-bottom: 1.8rem; }
+.qr-header h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.6rem; font-weight: 800;
+  color: #1a2332; margin-bottom: 0.3rem;
+}
+.qr-header p { font-size: 0.87rem; color: #6b7280; }
+.qr-header span { color: #0d9488; font-weight: 600; }
+
+/* Stat Cards */
+.qr-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem; margin-bottom: 1.8rem;
+}
+.qr-stat-card {
+  background: #fff; border-radius: 14px;
+  padding: 1.3rem 1.5rem; border: 1px solid #e5e7eb;
+  display: flex; align-items: center; gap: 1rem;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.qr-stat-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  transform: translateY(-2px);
+}
+.qr-stat-icon {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.qr-stat-icon.teal   { background: #ccfbf1; }
+.qr-stat-icon.blue   { background: #dbeafe; }
+.qr-stat-icon.purple { background: #ede9fe; }
+.qr-stat-icon.rose   { background: #ffe4e6; }
+.qr-stat-num {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.6rem; font-weight: 800; color: #1a2332;
+}
+.qr-stat-label { font-size: 0.8rem; color: #6b7280; margin-top: 0.1rem; }
+
+/* Two-column layout */
+.qr-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 1.2rem;
+}
+
+/* Chart Card */
+.qr-chart-card {
+  background: #fff; border-radius: 14px;
+  padding: 1.4rem; border: 1px solid #e5e7eb;
+}
+.qr-chart-header { margin-bottom: 1.2rem; }
+.qr-chart-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 1rem; font-weight: 700; color: #1a2332;
+}
+.qr-chart-sub { font-size: 0.78rem; color: #6b7280; margin-top: 0.2rem; }
+
+/* Line chart */
+.qr-line-wrap { width: 100%; overflow: hidden; }
+.qr-line-wrap svg { width: 100%; display: block; }
+
+/* QR Status List Card */
+.qr-status-card {
+  background: #fff; border-radius: 14px;
+  border: 1px solid #e5e7eb; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.qr-status-header {
+  padding: 1.2rem 1.4rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.qr-status-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 1rem; font-weight: 700; color: #1a2332;
+}
+
+/* Scrollable list */
+.qr-status-list {
+  flex: 1; overflow-y: auto; max-height: 420px;
+}
+.qr-status-list::-webkit-scrollbar { width: 5px; }
+.qr-status-list::-webkit-scrollbar-track { background: #f8fafc; }
+.qr-status-list::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 99px; }
+
+.qr-status-item {
+  display: flex; align-items: center; gap: 0.9rem;
+  padding: 1rem 1.4rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+.qr-status-item:last-child { border-bottom: none; }
+.qr-status-item:hover { background: #f8fafc; }
+
+.qr-status-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #0d9488; flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.15);
+}
+.qr-status-dot.inactive { background: #9ca3af; box-shadow: none; }
+
+.qr-status-info { flex: 1; min-width: 0; }
+.qr-status-name {
+  font-size: 0.87rem; font-weight: 600;
+  color: #1a2332; margin-bottom: 0.15rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.qr-status-time { font-size: 0.75rem; color: #9ca3af; }
+
+.qr-status-count { text-align: right; flex-shrink: 0; }
+.qr-status-count-num {
+  font-family: 'Sora', sans-serif;
+  font-size: 1rem; font-weight: 700; color: #1a2332;
+}
+.qr-status-count-label { font-size: 0.72rem; color: #9ca3af; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .qr-main-grid { grid-template-columns: 1fr; }
+  .qr-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .qr-status-list { max-height: 300px; }
+}
+@media (max-width: 600px) {
+  .qr-stats-grid { grid-template-columns: 1fr 1fr; }
+}

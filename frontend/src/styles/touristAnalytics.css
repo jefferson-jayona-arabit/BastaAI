@@ -1,0 +1,114 @@
+/* ===== TOURIST ANALYTICS PAGE ===== */
+
+/* Page Header */
+.ta-header { margin-bottom: 1.8rem; }
+.ta-header h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.6rem; font-weight: 800;
+  color: #1a2332; margin-bottom: 0.3rem;
+}
+.ta-header p { font-size: 0.87rem; color: #6b7280; }
+.ta-header span { color: #0d9488; font-weight: 600; }
+
+/* Stat Cards */
+.ta-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.ta-stat-card {
+  background: #ffffff; border-radius: 14px;
+  padding: 1.2rem 1.3rem; border: 1px solid #e5e7eb;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.ta-stat-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  transform: translateY(-2px);
+}
+.ta-stat-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; margin-bottom: 0.8rem;
+}
+.ta-stat-icon.teal   { background: #ccfbf1; }
+.ta-stat-icon.blue   { background: #dbeafe; }
+.ta-stat-icon.cyan   { background: #cffafe; }
+.ta-stat-icon.rose   { background: #ffe4e6; }
+.ta-stat-num {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.7rem; font-weight: 800; color: #1a2332;
+}
+.ta-stat-label { font-size: 0.8rem; color: #6b7280; margin-top: 0.2rem; }
+
+/* Chart Cards */
+.ta-chart-card {
+  background: #ffffff; border-radius: 14px;
+  padding: 1.4rem; border: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+}
+.ta-chart-header {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; margin-bottom: 1.2rem;
+}
+.ta-chart-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 1rem; font-weight: 700; color: #1a2332;
+}
+.ta-chart-sub { font-size: 0.78rem; color: #6b7280; margin-top: 0.2rem; }
+.ta-month-badge {
+  padding: 0.3rem 0.8rem; background: #ccfbf1;
+  border-radius: 20px; font-size: 0.78rem;
+  font-weight: 600; color: #0d9488; white-space: nowrap;
+}
+
+/* Line Chart */
+.ta-line-wrap { width: 100%; overflow: hidden; }
+.ta-line-wrap svg { width: 100%; display: block; }
+
+/* Vertical Bar Chart */
+.ta-bar-container {
+  position: relative;
+  padding-left: 44px;
+  padding-bottom: 40px;
+}
+.ta-y-label {
+  position: absolute; left: 0;
+  font-size: 0.72rem; color: #9ca3af;
+  transform: translateY(-50%);
+}
+.ta-bars-area {
+  display: flex; align-items: flex-end; gap: 2.5rem;
+  border-left: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 2rem;
+}
+.ta-bar-col {
+  display: flex; flex-direction: column;
+  align-items: center; flex: 1;
+}
+.ta-bar-fill {
+  width: 100%;
+  background: #0d9488;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.6s ease;
+}
+.ta-x-labels {
+  display: flex; gap: 2.5rem;
+  padding-left: 2rem; margin-top: 0.6rem;
+}
+.ta-x-label {
+  flex: 1; text-align: center;
+  font-size: 0.75rem; color: #6b7280; line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .ta-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .ta-stats-grid { grid-template-columns: 1fr 1fr; }
+  .ta-bars-area { gap: 1rem; padding: 0 0.5rem; }
+  .ta-x-labels { gap: 1rem; padding-left: 0.5rem; }
+  .ta-x-label { font-size: 0.65rem; }
+}

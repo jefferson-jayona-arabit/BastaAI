@@ -86,7 +86,7 @@ export default function Home() {
       </section>
 
       {/* FEATURES */}
-      <section className="section features-section" id="about">
+      <section className="section features-section">
         <div className="section-inner">
           <p className="section-tag">PLATFORM FEATURES</p>
           <h2 className="section-title">Everything You Need for<br />Your Perfect Journey</h2>
@@ -171,7 +171,7 @@ export default function Home() {
       </section>
 
       {/* ABOUT MUNICIPALITY */}
-      <section className="section about-section" id="contact">
+      <section className="section about-section" id="about">
         <div className="section-inner about-inner">
           <div className="about-text">
             <p className="section-tag">ABOUT THE MUNICIPALITY</p>
@@ -208,7 +208,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer className="footer">
+      <footer className="footer" id="contact">
         <div className="footer-inner">
           <div className="footer-brand">
             <div className="nav-logo">
