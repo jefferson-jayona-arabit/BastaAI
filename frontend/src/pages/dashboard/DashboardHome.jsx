@@ -1,217 +1,373 @@
+import { useState, useEffect } from "react";
+import {
+    fetchDashboardStats,
+    fetchDailyVisits,
+    fetchSubmissions,
+    fetchTopSpots,
+    fetchFeedbackDistribution,
+} from "../../services/dashboardService";
 import "../../styles/Dashboard.css";
 
-const stats = [
-  { icon: "👤", color: "teal",   num: "423",   label: "Total Tourist Users" },
-  { icon: "⊞",  color: "blue",   num: "5,819", label: "Total QR Scans" },
-  { icon: "📍", color: "cyan",   num: "12",    label: "Tourist Destinations" },
-  { icon: "🏨", color: "purple", num: "12",    label: "Establishments" },
-  { icon: "💬", color: "rose",   num: "874",   label: "Total Feedback" },
-];
+// ── Default / fallback values ─────────────────────────────────
+const DEFAULT_STATS = {
+    totalTouristUsers: 0, totalQRScans: 0,
+    touristDestinations: 0, totalEstablishments: 0, totalFeedback: 0,
+};
+const DEFAULT_SUBMISSIONS = {
+    pending: 0, approved: 0, newRegistrations: 0, total: 0, approvalRate: 0,
+};
+const DEFAULT_FEEDBACK = {
+    totalReviews: 0, avgRating: 0, positiveRate: 0,
+    distribution: { fiveStar:0, fourStar:0, threeStar:0, twoStar:0, oneStar:0 },
+};
 
-// Line chart points (normalized 0–220 height, 0–790 width)
-const linePoints = [
-  [0,190],[30,185],[60,175],[90,170],[120,160],[150,165],[180,155],
-  [210,150],[240,145],[270,148],[300,140],[330,142],[360,138],[390,132],
-  [420,130],[450,135],[480,128],[510,125],[540,120],[570,118],[600,115],
-  [630,110],[660,105],[680,100],[720,95],[750,90],[780,50]
-];
-const pointsStr = linePoints.map(([x,y]) => `${x},${y}`).join(" ");
+// ── Donut Chart ────────────────────────────────────────────────
+const DONUT_COLORS = {
+    fiveStar: "#0d9488", fourStar: "#22c55e",
+    threeStar: "#facc15", twoStar: "#f97316", oneStar: "#ef4444",
+};
+const DONUT_LABELS = {
+    fiveStar: "Excellent (5★)", fourStar: "Good (4★)",
+    threeStar: "Average (3★)", twoStar: "Poor (2★)", oneStar: "Very Poor (1★)",
+};
 
-const submissions = [
-  { icon: "⏱️", num: 1, label: "Pending Review", badge: "Pending",  cls: "pending",  badgeCls: "pending"  },
-  { icon: "✅",  num: 9, label: "Approved",       badge: "Active",   cls: "approved", badgeCls: "active"   },
-  { icon: "🔵",  num: 2, label: "New Registrations", badge: "New",  cls: "new",      badgeCls: "new-b"    },
-];
-
-const bars = [
-  { name: "Jementiza Inland Resort",          val: 950, max: 1000 },
-  { name: "Ina's Greenscape & Flower Farm",   val: 780, max: 1000 },
-  { name: "Juncook Restaurant",               val: 600, max: 1000 },
-  { name: "Ina Farmers Learning Site",        val: 570, max: 1000 },
-  { name: "Maleia Cafe",                      val: 540, max: 1000 },
-  { name: "Fine Dust Cafe",                   val: 520, max: 1000 },
-  { name: "Iatchmatesweets Cakes & Pastries", val: 500, max: 1000 },
-  { name: "Feric Hotel",                      val: 480, max: 1000 },
-];
-
-// Donut chart segments
-const donutData = [
-  { label: "Excellent (5★)", color: "#0d9488", pct: 0.45 },
-  { label: "Good (4★)",      color: "#22c55e", pct: 0.24 },
-  { label: "Average (3★)",   color: "#facc15", pct: 0.15 },
-  { label: "Poor (2★)",      color: "#f97316", pct: 0.10 },
-  { label: "Very Poor (1★)", color: "#ef4444", pct: 0.06 },
-];
-
-function DonutChart({ data }) {
-  const r = 70, cx = 90, cy = 90, stroke = 28;
-  const circ = 2 * Math.PI * r;
-  let offset = 0;
-  return (
-    <svg viewBox="0 0 180 180" className="donut-svg">
-      {data.map((seg, i) => {
-        const dash = seg.pct * circ;
-        const gap = circ - dash;
-        const el = (
-          <circle key={i} cx={cx} cy={cy} r={r}
-            fill="none" stroke={seg.color} strokeWidth={stroke}
-            strokeDasharray={`${dash} ${gap}`}
-            strokeDashoffset={-offset}
-            transform={`rotate(-90 ${cx} ${cy})`}
-            style={{ transition: "stroke-dasharray 0.6s ease" }}
-          />
-        );
-        offset += dash;
-        return el;
-      })}
-      <text x={cx} y={cy - 6} textAnchor="middle" fontSize="16" fontWeight="800" fill="#1a2332" fontFamily="Sora,sans-serif">4.2</text>
-      <text x={cx} y={cy + 12} textAnchor="middle" fontSize="9" fill="#6b7280">Avg Rating</text>
-    </svg>
-  );
+function DonutChart({ dist, avg }) {
+    const r = 70, cx = 90, cy = 90, stroke = 28;
+    const circ = 2 * Math.PI * r;
+    const total = Object.values(dist).reduce((s, v) => s + v, 0);
+    let offset = 0;
+    return (
+        <svg viewBox="0 0 180 180" className="donut-svg">
+            {total === 0 ? (
+                <circle cx={cx} cy={cy} r={r} fill="none"
+                    stroke="#e5e7eb" strokeWidth={stroke} />
+            ) : Object.entries(dist).map(([key, val], i) => {
+                const pct  = val / total;
+                const dash = pct * circ;
+                const gap  = circ - dash;
+                const el = (
+                    <circle key={i} cx={cx} cy={cy} r={r}
+                        fill="none" stroke={DONUT_COLORS[key]} strokeWidth={stroke}
+                        strokeDasharray={`${dash} ${gap}`}
+                        strokeDashoffset={-offset}
+                        transform={`rotate(-90 ${cx} ${cy})`}
+                    />
+                );
+                offset += dash;
+                return el;
+            })}
+            <text x={cx} y={cy - 6} textAnchor="middle" fontSize="16"
+                fontWeight="800" fill="#1a2332" fontFamily="Sora,sans-serif">
+                {avg > 0 ? avg.toFixed(1) : "—"}
+            </text>
+            <text x={cx} y={cy + 12} textAnchor="middle" fontSize="9" fill="#6b7280">
+                Avg Rating
+            </text>
+        </svg>
+    );
 }
 
+// ── Skeleton loader ────────────────────────────────────────────
+function Skeleton({ w = "100%", h = "1rem", radius = "6px" }) {
+    return (
+        <div style={{
+            width: w, height: h, borderRadius: radius,
+            background: "linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)",
+            backgroundSize: "200% 100%",
+            animation: "shimmer 1.4s infinite",
+        }} />
+    );
+}
+
+// ── Main Component ─────────────────────────────────────────────
 export default function DashboardHome() {
-  return (
-    <div>
-      {/* Stats */}
-      <div className="stats-grid">
-        {stats.map((s) => (
-          <div className="stat-card" key={s.label}>
-            <div className={`stat-icon ${s.color}`}>{s.icon}</div>
-            <div className="stat-num">{s.num}</div>
-            <div className="stat-label">{s.label}</div>
-          </div>
-        ))}
-      </div>
+    const [stats,       setStats]       = useState(DEFAULT_STATS);
+    const [visits,      setVisits]      = useState([]);
+    const [submissions, setSubmissions] = useState(DEFAULT_SUBMISSIONS);
+    const [topSpots,    setTopSpots]    = useState([]);
+    const [feedback,    setFeedback]    = useState(DEFAULT_FEEDBACK);
+    const [loading,     setLoading]     = useState(true);
+    const [error,       setError]       = useState("");
 
-      {/* Charts Row */}
-      <div className="charts-row">
-        {/* Line Chart */}
-        <div className="chart-card">
-          <div className="chart-card-header">
-            <div>
-              <div className="chart-card-title">Tourist Visits Analytics</div>
-              <div className="chart-card-sub">Daily visits for March 2026</div>
-            </div>
-            <span className="chart-month-badge">March 2026</span>
-          </div>
-          <div className="line-chart-wrap">
-            <svg viewBox="0 0 800 230" preserveAspectRatio="none">
-              {/* Grid lines */}
-              {[0, 55, 110, 165, 220].map((y, i) => (
-                <g key={i}>
-                  <line x1="0" y1={y} x2="800" y2={y} stroke="#f1f5f9" strokeWidth="1" />
-                  <text x="0" y={y + 4} fontSize="10" fill="#9ca3af">{220 - y === 0 ? "0" : 220 - y}</text>
-                </g>
-              ))}
-              {/* Area fill */}
-              <defs>
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0d9488" stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="#0d9488" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <polygon points={`0,220 ${pointsStr} 780,220`} fill="url(#areaGrad)" />
-              {/* Line */}
-              <polyline points={pointsStr} fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-              {/* Dots */}
-              {linePoints.filter((_, i) => i % 3 === 0).map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r="4" fill="#0d9488" stroke="#fff" strokeWidth="2" />
-              ))}
-              {/* X-axis labels */}
-              {["Mar 1","Mar 3","Mar 5","Mar 7","Mar 9","Mar 11","Mar 13","Mar 15","Mar 17","Mar 19","Mar 21","Mar 23","Mar 25","Mar 27","Mar 29","Mar 30"].map((label, i) => (
-                <text key={i} x={i * 50} y={225} fontSize="8.5" fill="#9ca3af" textAnchor="middle">{label}</text>
-              ))}
-            </svg>
-          </div>
-        </div>
+    useEffect(() => {
+        const load = async () => {
+            setLoading(true);
+            try {
+                const [s, v, sub, spots, fb] = await Promise.all([
+                    fetchDashboardStats(),
+                    fetchDailyVisits(),
+                    fetchSubmissions(),
+                    fetchTopSpots(),
+                    fetchFeedbackDistribution(),
+                ]);
+                setStats(s);
+                setVisits(v);
+                setSubmissions(sub);
+                setTopSpots(spots);
+                setFeedback(fb);
+            } catch (err) {
+                setError("Failed to load dashboard data.");
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, []);
 
-        {/* Establishment Submissions */}
-        <div className="chart-card">
-          <div className="chart-card-header">
-            <div>
-              <div className="chart-card-title">Establishment Submissions</div>
-              <div className="chart-card-sub">Promotional content & registrations</div>
-            </div>
-          </div>
-          <div className="submission-list">
-            {submissions.map((s) => (
-              <div className={`submission-item ${s.cls}`} key={s.label}>
-                <span className="sub-icon">{s.icon}</span>
-                <div className="sub-info">
-                  <div className="sub-num">{s.num}</div>
-                  <div className="sub-label">{s.label}</div>
+    const statCards = [
+        { icon: "👤", color: "teal",   num: stats.totalTouristUsers,   label: "Total Tourist Users" },
+        { icon: "⊞",  color: "blue",   num: stats.totalQRScans,        label: "Total QR Scans" },
+        { icon: "📍", color: "cyan",   num: stats.touristDestinations,  label: "Tourist Destinations" },
+        { icon: "🏨", color: "purple", num: stats.totalEstablishments,  label: "Establishments" },
+        { icon: "💬", color: "rose",   num: stats.totalFeedback,        label: "Total Feedback" },
+    ];
+
+    // Build SVG line chart from visits data
+    const CHART_W = 780, CHART_H = 200;
+    const maxVisits = visits.length > 0
+        ? Math.max(...visits.map(v => v.total_scans), 1)
+        : 1;
+    const linePoints = visits.map((v, i) => [
+        Math.round((i / Math.max(visits.length - 1, 1)) * CHART_W),
+        Math.round(CHART_H - (v.total_scans / maxVisits) * CHART_H),
+    ]);
+    const pointsStr = linePoints.map(([x, y]) => `${x},${y}`).join(" ");
+
+    // Bar chart max
+    const maxBar = topSpots.length > 0
+        ? Math.max(...topSpots.map(s => s.totalScans), 1)
+        : 1;
+
+    return (
+        <div>
+            {/* Shimmer style */}
+            <style>{`
+                @keyframes shimmer {
+                    0%   { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+            `}</style>
+
+            {error && (
+                <div style={{
+                    background: "#fef2f2", border: "1px solid #fecaca",
+                    borderRadius: "10px", padding: "0.8rem 1rem",
+                    color: "#dc2626", fontSize: "0.85rem", marginBottom: "1.2rem"
+                }}>
+                    ⚠️ {error}
                 </div>
-                <span className={`sub-badge ${s.badgeCls}`}>{s.badge}</span>
-              </div>
-            ))}
-          </div>
-          <div className="total-estab">
-            <div className="total-estab-row">
-              <span>Total Establishments</span>
-              <span>12</span>
-            </div>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: "75%" }} />
-            </div>
-            <p className="progress-label">75% approval rate</p>
-          </div>
-        </div>
-      </div>
+            )}
 
-      {/* Bottom Row */}
-      <div className="bottom-row">
-        {/* Bar Chart */}
-        <div className="chart-card">
-          <div className="chart-card-header">
-            <div>
-              <div className="chart-card-title">Most Visited Tourist Spots</div>
-              <div className="chart-card-sub">Based on total QR code scans — March</div>
+            {/* ── Stat Cards ── */}
+            <div className="stats-grid">
+                {statCards.map((s) => (
+                    <div className="stat-card" key={s.label}>
+                        <div className={`stat-icon ${s.color}`}>{s.icon}</div>
+                        {loading
+                            ? <Skeleton w="60px" h="2rem" radius="8px" />
+                            : <div className="stat-num">
+                                {s.num.toLocaleString()}
+                              </div>
+                        }
+                        <div className="stat-label">{s.label}</div>
+                    </div>
+                ))}
             </div>
-          </div>
-          <div className="bar-chart-wrap">
-            {bars.map((b) => (
-              <div className="bar-item" key={b.name}>
-                <span className="bar-name">{b.name}</span>
-                <div className="bar-track">
-                  <div className="bar-fill" style={{ width: `${(b.val / b.max) * 100}%` }} />
-                </div>
-              </div>
-            ))}
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.4rem" }}>
-              {[0, 250, 500, 750, 1000].map(v => (
-                <span key={v} style={{ fontSize: "0.72rem", color: "#9ca3af" }}>{v}</span>
-              ))}
-            </div>
-          </div>
-        </div>
 
-        {/* Donut Chart */}
-        <div className="chart-card">
-          <div className="chart-card-header">
-            <div>
-              <div className="chart-card-title">Feedback & Rating Distribution</div>
-              <div className="chart-card-sub">Overall satisfaction from tourist feedback — March</div>
-            </div>
-          </div>
-          <div className="donut-wrap">
-            <DonutChart data={donutData} />
-            <div className="donut-legend">
-              {donutData.map((d) => (
-                <div className="legend-item" key={d.label}>
-                  <span className="legend-dot" style={{ background: d.color }} />
-                  {d.label}
+            {/* ── Charts Row ── */}
+            <div className="charts-row">
+                {/* Line Chart */}
+                <div className="chart-card">
+                    <div className="chart-card-header">
+                        <div>
+                            <div className="chart-card-title">Tourist Visits Analytics</div>
+                            <div className="chart-card-sub">Daily visits for this month</div>
+                        </div>
+                        <span className="chart-month-badge">This Month</span>
+                    </div>
+                    <div className="line-chart-wrap">
+                        {loading ? (
+                            <Skeleton w="100%" h="200px" radius="8px" />
+                        ) : visits.length === 0 ? (
+                            <div style={{ textAlign: "center", color: "#9ca3af",
+                                padding: "4rem 0", fontSize: "0.87rem" }}>
+                                No visit data yet.
+                            </div>
+                        ) : (
+                            <svg viewBox="0 0 800 230" preserveAspectRatio="none">
+                                {[0, 50, 100, 150, 200].map((y, i) => (
+                                    <g key={i}>
+                                        <line x1="0" y1={y} x2="800" y2={y}
+                                            stroke="#f1f5f9" strokeWidth="1" />
+                                        <text x="0" y={y + 4} fontSize="10" fill="#9ca3af">
+                                            {Math.round(maxVisits - (y / CHART_H) * maxVisits)}
+                                        </text>
+                                    </g>
+                                ))}
+                                <defs>
+                                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#0d9488" stopOpacity="0.15" />
+                                        <stop offset="100%" stopColor="#0d9488" stopOpacity="0" />
+                                    </linearGradient>
+                                </defs>
+                                <polygon
+                                    points={`0,${CHART_H} ${pointsStr} ${CHART_W},${CHART_H}`}
+                                    fill="url(#areaGrad)"
+                                />
+                                <polyline points={pointsStr} fill="none"
+                                    stroke="#0d9488" strokeWidth="2.5"
+                                    strokeLinejoin="round" strokeLinecap="round"
+                                />
+                                {linePoints.filter((_, i) => i % 3 === 0).map(([x, y], i) => (
+                                    <circle key={i} cx={x} cy={y} r="4"
+                                        fill="#0d9488" stroke="#fff" strokeWidth="2" />
+                                ))}
+                                {visits.filter((_, i) => i % 3 === 0).map((v, i) => (
+                                    <text key={i}
+                                        x={linePoints[i * 3]?.[0] ?? 0} y={225}
+                                        fontSize="8.5" fill="#9ca3af" textAnchor="middle">
+                                        {v.label}
+                                    </text>
+                                ))}
+                            </svg>
+                        )}
+                    </div>
                 </div>
-              ))}
+
+                {/* Establishment Submissions */}
+                <div className="chart-card">
+                    <div className="chart-card-header">
+                        <div>
+                            <div className="chart-card-title">Establishment Submissions</div>
+                            <div className="chart-card-sub">Promotional content & registrations</div>
+                        </div>
+                    </div>
+                    {loading ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+                            <Skeleton h="60px" radius="10px" />
+                            <Skeleton h="60px" radius="10px" />
+                            <Skeleton h="60px" radius="10px" />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="submission-list">
+                                {[
+                                    { icon: "⏱️", num: submissions.pending,          label: "Pending Review",    badge: "Pending", cls: "pending",  badgeCls: "pending" },
+                                    { icon: "✅",  num: submissions.approved,         label: "Approved",          badge: "Active",  cls: "approved", badgeCls: "active"  },
+                                    { icon: "🔵",  num: submissions.newRegistrations, label: "New Registrations", badge: "New",     cls: "new",      badgeCls: "new-b"   },
+                                ].map((s) => (
+                                    <div className={`submission-item ${s.cls}`} key={s.label}>
+                                        <span className="sub-icon">{s.icon}</span>
+                                        <div className="sub-info">
+                                            <div className="sub-num">{s.num}</div>
+                                            <div className="sub-label">{s.label}</div>
+                                        </div>
+                                        <span className={`sub-badge ${s.badgeCls}`}>{s.badge}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="total-estab">
+                                <div className="total-estab-row">
+                                    <span>Total Establishments</span>
+                                    <span>{submissions.total}</span>
+                                </div>
+                                <div className="progress-bar">
+                                    <div className="progress-fill"
+                                        style={{ width: `${submissions.approvalRate}%` }} />
+                                </div>
+                                <p className="progress-label">{submissions.approvalRate}% approval rate</p>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
-            <div className="donut-stats">
-              <div className="donut-stat"><div className="donut-stat-num">4.2</div><div className="donut-stat-label">Avg Rating</div></div>
-              <div className="donut-stat"><div className="donut-stat-num">2,931</div><div className="donut-stat-label">Total Reviews</div></div>
-              <div className="donut-stat"><div className="donut-stat-num">69%</div><div className="donut-stat-label">Positive</div></div>
+
+            {/* ── Bottom Row ── */}
+            <div className="bottom-row">
+                {/* Horizontal Bar Chart */}
+                <div className="chart-card">
+                    <div className="chart-card-header">
+                        <div>
+                            <div className="chart-card-title">Most Visited Tourist Spots</div>
+                            <div className="chart-card-sub">Based on total QR code scans</div>
+                        </div>
+                    </div>
+                    <div className="bar-chart-wrap">
+                        {loading ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                {[...Array(5)].map((_, i) => <Skeleton key={i} h="18px" radius="4px" />)}
+                            </div>
+                        ) : topSpots.length === 0 ? (
+                            <div style={{ textAlign: "center", color: "#9ca3af",
+                                padding: "2rem 0", fontSize: "0.87rem" }}>
+                                No scan data yet.
+                            </div>
+                        ) : topSpots.map((b) => (
+                            <div className="bar-item" key={b.id}>
+                                <span className="bar-name">{b.name}</span>
+                                <div className="bar-track">
+                                    <div className="bar-fill"
+                                        style={{ width: `${(b.totalScans / maxBar) * 100}%` }} />
+                                </div>
+                            </div>
+                        ))}
+                        {!loading && topSpots.length > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.4rem" }}>
+                                {[0, Math.round(maxBar * 0.25), Math.round(maxBar * 0.5),
+                                  Math.round(maxBar * 0.75), maxBar].map(v => (
+                                    <span key={v} style={{ fontSize: "0.72rem", color: "#9ca3af" }}>{v}</span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Donut Chart */}
+                <div className="chart-card">
+                    <div className="chart-card-header">
+                        <div>
+                            <div className="chart-card-title">Feedback & Rating Distribution</div>
+                            <div className="chart-card-sub">Overall satisfaction from tourist feedback</div>
+                        </div>
+                    </div>
+                    <div className="donut-wrap">
+                        {loading ? (
+                            <Skeleton w="180px" h="180px" radius="50%" />
+                        ) : (
+                            <DonutChart dist={feedback.distribution} avg={feedback.avgRating} />
+                        )}
+                        <div className="donut-legend">
+                            {Object.entries(DONUT_LABELS).map(([key, label]) => (
+                                <div className="legend-item" key={key}>
+                                    <span className="legend-dot" style={{ background: DONUT_COLORS[key] }} />
+                                    {label}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="donut-stats">
+                            <div className="donut-stat">
+                                <div className="donut-stat-num">
+                                    {loading ? "—" : (feedback.avgRating > 0 ? feedback.avgRating.toFixed(1) : "0")}
+                                </div>
+                                <div className="donut-stat-label">Avg Rating</div>
+                            </div>
+                            <div className="donut-stat">
+                                <div className="donut-stat-num">
+                                    {loading ? "—" : feedback.totalReviews.toLocaleString()}
+                                </div>
+                                <div className="donut-stat-label">Total Reviews</div>
+                            </div>
+                            <div className="donut-stat">
+                                <div className="donut-stat-num">
+                                    {loading ? "—" : `${feedback.positiveRate}%`}
+                                </div>
+                                <div className="donut-stat-label">Positive</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
