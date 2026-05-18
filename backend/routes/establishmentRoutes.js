@@ -1,7 +1,7 @@
 // backend/routes/establishmentRoutes.js
 
-const express = require('express');
-const router  = express.Router();
+const express  = require('express');
+const router   = express.Router();
 const {
     getAllEstablishments,
     getEstablishmentById,
@@ -10,39 +10,46 @@ const {
     updateStatus,
     deleteEstablishment,
 } = require('../controllers/establishmentController');
+const {
+    uploadImages,
+    getImages,
+    setPrimary,
+    deleteImage,
+} = require('../controllers/establishmentImageController');
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
 
-// All routes require a valid JWT
 router.use(verifyToken);
 
-// GET    /api/establishments          → list all + stats
+// ── Establishment CRUD ──────────────────────────────────────────
 router.get('/',     getAllEstablishments);
-
-// GET    /api/establishments/:id      → single record
 router.get('/:id',  getEstablishmentById);
+router.post('/',    requireRole('admin','lgu','establishment'), createEstablishment);
+router.put('/:id',  requireRole('admin','lgu'), updateEstablishment);
+router.patch('/:id/status', requireRole('admin','lgu'), updateStatus);
+router.delete('/:id', requireRole('admin'), deleteEstablishment);
 
-// POST   /api/establishments          → create (admin, lgu, establishment)
-router.post('/',
-    requireRole('admin', 'lgu', 'establishment'),
-    createEstablishment
+// ── Images ──────────────────────────────────────────────────────
+// POST   /api/establishments/:id/images          upload images
+router.post('/:id/images',
+    requireRole('admin','lgu','establishment'),
+    upload.array('images', 10),
+    uploadImages
 );
 
-// PUT    /api/establishments/:id      → full update (admin, lgu)
-router.put('/:id',
-    requireRole('admin', 'lgu'),
-    updateEstablishment
+// GET    /api/establishments/:id/images          list all images
+router.get('/:id/images', getImages);
+
+// PATCH  /api/establishments/:id/images/:imageId/primary
+router.patch('/:id/images/:imageId/primary',
+    requireRole('admin','lgu'),
+    setPrimary
 );
 
-// PATCH  /api/establishments/:id/status → approve / pending / new (admin, lgu)
-router.patch('/:id/status',
-    requireRole('admin', 'lgu'),
-    updateStatus
-);
-
-// DELETE /api/establishments/:id      → delete (admin only)
-router.delete('/:id',
-    requireRole('admin'),
-    deleteEstablishment
+// DELETE /api/establishments/:id/images/:imageId
+router.delete('/:id/images/:imageId',
+    requireRole('admin','lgu'),
+    deleteImage
 );
 
 module.exports = router;

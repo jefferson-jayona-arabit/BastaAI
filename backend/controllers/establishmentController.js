@@ -1,31 +1,32 @@
 // backend/controllers/establishmentController.js
+//
+// Handles HTTP requests for the Establishments page.
+// Business logic and DB queries are delegated to the model layer.
+// ─────────────────────────────────────────────────────────────────
 
 const establishmentModel = require('../models/establishmentModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 
-// Matches the DB CHECK constraint exactly:
-// CHECK (accreditation IN ('Primary', 'Secondary', 'None'))
-const ALLOWED_ACCREDITATIONS = ['None', 'Primary', 'Secondary'];
-
 // ── Decrypt helper for a single establishment row ───────────────
 const decryptRow = (row) => ({
     id:            row.id,
-    name:          row.name        ? decrypt(row.name)        : null,
-    type:          row.type        ? decrypt(row.type)        : null,
-    owner:         row.owner_name  ? decrypt(row.owner_name)  : null,
-    address:       row.address     ? decrypt(row.address)     : null,
-    description:   row.description ? decrypt(row.description) : null,
-    latitude:      row.latitude    ? decrypt(row.latitude)    : null,
-    longitude:     row.longitude   ? decrypt(row.longitude)   : null,
+    name:          row.name       ? decrypt(row.name)       : null,
+    type:          row.type       ? decrypt(row.type)       : null,
+    owner:         row.owner_name ? decrypt(row.owner_name) : null,
+    address:       row.address    ? decrypt(row.address)    : null,
+    description:   row.description? decrypt(row.description): null,
+    latitude:      row.latitude   ? decrypt(row.latitude)   : null,
+    longitude:     row.longitude  ? decrypt(row.longitude)  : null,
     accreditation: row.accreditation,
     status:        row.status,
-    rating:        row.rating      ? parseFloat(row.rating)   : null,
+    rating:        row.rating     ? parseFloat(row.rating)  : null,
     submitted:     row.submitted_at,
     created_at:    row.created_at,
     user_id:       row.user_id,
 });
 
 // ── GET /api/establishments ─────────────────────────────────────
+// Returns all establishments (decrypted) + stat counts
 const getAllEstablishments = async (req, res) => {
     try {
         const [rows, counts] = await Promise.all([
@@ -33,25 +34,21 @@ const getAllEstablishments = async (req, res) => {
             establishmentModel.countByStatus(),
         ]);
 
+        const establishments = rows.map(decryptRow);
+
         res.json({
-            establishments: rows.map(decryptRow),
+            establishments,
             stats: {
-                total:    parseInt(counts.total)             || 0,
-                approved: parseInt(counts.approved)          || 0,
-                pending:  parseInt(counts.pending)           || 0,
-                new:      parseInt(counts.new_registrations) || 0,
+                total:    parseInt(counts.total)            || 0,
+                approved: parseInt(counts.approved)         || 0,
+                pending:  parseInt(counts.pending)          || 0,
+                new:      parseInt(counts.new_registrations)|| 0,
             },
         });
     } catch (err) {
         console.error('getAllEstablishments error:', err.message);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-};
-
-// ── GET /api/establishments/accreditations ──────────────────────
-// Returns allowed values so the frontend dropdown always matches the DB.
-const getAccreditationOptions = (_req, res) => {
-    res.json({ accreditations: ALLOWED_ACCREDITATIONS });
 };
 
 // ── GET /api/establishments/:id ─────────────────────────────────
@@ -77,26 +74,22 @@ const createEstablishment = async (req, res) => {
         return res.status(400).json({ error: 'Name, type, and owner are required.' });
     }
 
-    // Fall back to 'None' if frontend sends an unrecognised value
-    const safeAccreditation = ALLOWED_ACCREDITATIONS.includes(accreditation)
-        ? accreditation
-        : 'None';
-
     try {
-        const row = await establishmentModel.createEstablishment({
+        const data = {
             user_id:       req.user.id,
             name:          encrypt(name),
             type:          encrypt(type),
             owner_name:    encrypt(owner_name),
-            address:       address     ? encrypt(address)           : null,
-            description:   description ? encrypt(description)       : null,
+            address:       address     ? encrypt(address)     : null,
+            description:   description ? encrypt(description) : null,
             latitude:      latitude    ? encrypt(String(latitude))  : null,
             longitude:     longitude   ? encrypt(String(longitude)) : null,
-            accreditation: safeAccreditation,
-        });
+            accreditation: accreditation || 'None',
+        };
 
+        const row = await establishmentModel.createEstablishment(data);
         res.status(201).json({
-            message:       'Establishment created successfully.',
+            message: 'Establishment created successfully.',
             establishment: decryptRow(row),
         });
     } catch (err) {
@@ -116,11 +109,7 @@ const updateEstablishment = async (req, res) => {
             description, latitude, longitude, accreditation,
         } = req.body;
 
-        const safeAccreditation = ALLOWED_ACCREDITATIONS.includes(accreditation)
-            ? accreditation
-            : existing.accreditation;
-
-        const row = await establishmentModel.updateEstablishment(req.params.id, {
+        const data = {
             name:          name        ? encrypt(name)              : existing.name,
             type:          type        ? encrypt(type)              : existing.type,
             owner_name:    owner_name  ? encrypt(owner_name)        : existing.owner_name,
@@ -128,11 +117,12 @@ const updateEstablishment = async (req, res) => {
             description:   description ? encrypt(description)       : existing.description,
             latitude:      latitude    ? encrypt(String(latitude))  : existing.latitude,
             longitude:     longitude   ? encrypt(String(longitude)) : existing.longitude,
-            accreditation: safeAccreditation,
-        });
+            accreditation: accreditation ?? existing.accreditation,
+        };
 
+        const row = await establishmentModel.updateEstablishment(req.params.id, data);
         res.json({
-            message:       'Establishment updated successfully.',
+            message: 'Establishment updated successfully.',
             establishment: decryptRow(row),
         });
     } catch (err) {
@@ -176,7 +166,6 @@ const deleteEstablishment = async (req, res) => {
 
 module.exports = {
     getAllEstablishments,
-    getAccreditationOptions,
     getEstablishmentById,
     createEstablishment,
     updateEstablishment,
