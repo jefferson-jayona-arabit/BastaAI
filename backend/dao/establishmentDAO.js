@@ -6,7 +6,6 @@
 
 const pool = require('../config/db');
 
-/** Shared column list to avoid repeating the SELECT projection. */
 const BASE_COLUMNS = `
     id, name, type, owner_name, address, description,
     latitude, longitude, accreditation, status,
@@ -38,9 +37,7 @@ const EstablishmentDAO = {
     // ── Return all establishments matching a given status ────────
     findByStatus: async (status) => {
         const { rows } = await pool.query(
-            `SELECT id, name, type, owner_name, address, description,
-                    latitude, longitude, accreditation, status,
-                    rating, submitted_at, created_at
+            `SELECT ${BASE_COLUMNS}
              FROM establishments WHERE status = $1
              ORDER BY submitted_at DESC`,
             [status]
@@ -80,7 +77,7 @@ const EstablishmentDAO = {
                 (user_id, name, type, owner_name, address, description,
                  latitude, longitude, accreditation)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-             RETURNING *`,
+             RETURNING ${BASE_COLUMNS}`,
             [
                 user_id, name, type, owner_name,
                 address, description, latitude, longitude,
@@ -88,6 +85,32 @@ const EstablishmentDAO = {
             ]
         );
         return rows[0];
+    },
+
+    // ── Update all editable fields ───────────────────────────────
+    update: async (id, {
+        name, type, owner_name, address,
+        description, latitude, longitude, accreditation,
+    }) => {
+        const { rows } = await pool.query(
+            `UPDATE establishments SET
+                name          = $1,
+                type          = $2,
+                owner_name    = $3,
+                address       = $4,
+                description   = $5,
+                latitude      = $6,
+                longitude     = $7,
+                accreditation = $8
+             WHERE id = $9
+             RETURNING ${BASE_COLUMNS}`,
+            [
+                name, type, owner_name, address,
+                description, latitude, longitude,
+                accreditation, id,
+            ]
+        );
+        return rows[0] ?? null;
     },
 
     // ── Update only the status column ────────────────────────────
@@ -118,8 +141,7 @@ const EstablishmentDAO = {
     // ── Permanently remove an establishment row ──────────────────
     deleteById: async (id) => {
         await pool.query(
-            `DELETE FROM establishments WHERE id = $1`,
-            [id]
+            `DELETE FROM establishments WHERE id = $1`, [id]
         );
     },
 };
