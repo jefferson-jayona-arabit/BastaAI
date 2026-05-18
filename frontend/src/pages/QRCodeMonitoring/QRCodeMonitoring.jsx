@@ -143,7 +143,7 @@ export default function QRCodeMonitoring() {
                                 {yLabels.map((val, i) => {
                                     const y = (i / (yLabels.length - 1)) * CHART_H + 5;
                                     return (
-                                        <g key={i}>
+                                        <g key={`grid-${i}`}>
                                             <line x1="40" y1={y} x2="800" y2={y}
                                                 stroke="#f1f5f9" strokeWidth="1" />
                                             <text x="35" y={y + 4} fontSize="10"
@@ -172,7 +172,7 @@ export default function QRCodeMonitoring() {
 
                                 {/* Dots */}
                                 {linePoints.map(([x, y], i) => (
-                                    <circle key={i} cx={x + 40} cy={y + 5} r="4.5"
+                                    <circle key={`dot-${i}`} cx={x + 40} cy={y + 5} r="4.5"
                                         fill="#0d9488" stroke="#fff" strokeWidth="2" />
                                 ))}
 
@@ -183,7 +183,7 @@ export default function QRCodeMonitoring() {
                                         ? s.name.slice(0, 18) + "…"
                                         : s.name;
                                     return (
-                                        <text key={i} x={x} y={226} fontSize="9"
+                                        <text key={`label-${i}`} x={x} y={226} fontSize="9"
                                             fill="#9ca3af" textAnchor="middle">
                                             {label}
                                         </text>

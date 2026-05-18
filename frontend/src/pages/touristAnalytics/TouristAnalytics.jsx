@@ -135,7 +135,7 @@ export default function TouristAnalytics() {
                         <svg viewBox="0 0 920 260" style={{ height: "260px", width: "100%" }}>
                             {/* Y-axis grid + labels */}
                             {[0, 55, 110, 165, 220].map((y, i) => (
-                                <g key={i}>
+                                <g key={`grid-${i}`}>
                                     <line x1="35" y1={y + 5} x2="910" y2={y + 5}
                                         stroke="#f1f5f9" strokeWidth="1" />
                                     <text x="30" y={y + 9} fontSize="10"
@@ -162,12 +162,12 @@ export default function TouristAnalytics() {
                             />
                             {/* Dots */}
                             {linePoints.filter((_, i) => i % 2 === 0).map(([x, y], i) => (
-                                <circle key={i} cx={x + 35} cy={y + 5} r="4"
+                                <circle key={`dot-${i}`} cx={x + 35} cy={y + 5} r="4"
                                     fill="#0d9488" stroke="#fff" strokeWidth="2" />
                             ))}
                             {/* X-axis labels */}
                             {trend.filter((_, i) => i % 2 === 0).map((t, i) => (
-                                <text key={i}
+                                <text key={`label-${i}`}
                                     x={linePoints[i * 2]?.[0] + 35 ?? 0} y={254}
                                     fontSize="9" fill="#9ca3af" textAnchor="middle">
                                     {t.label}
@@ -199,7 +199,7 @@ export default function TouristAnalytics() {
                         {/* Y-axis labels */}
                         {[maxBar, Math.round(maxBar * 0.75), Math.round(maxBar * 0.5),
                           Math.round(maxBar * 0.25), 0].map((val, i) => (
-                            <div key={val} className="ta-y-label"
+                            <div key={i} className="ta-y-label"
                                 style={{ top: `${(i / 4) * CHART_H}px` }}>
                                 {val}
                             </div>

@@ -112,7 +112,7 @@ function DonutChart({ dist }) {
         )}
         {arcs.map((arc, i) => (
           <path
-            key={i}
+            key={`slice-${i}`}
             d={arc.d}
             fill="none"
             stroke={arc.color}
@@ -130,7 +130,7 @@ function DonutChart({ dist }) {
       </svg>
       <div className="fb-donut-legend">
         {segments.map((s, i) => (
-          <div className="fb-legend-item" key={i}>
+          <div className="fb-legend-item" key={`legend-${i}`}>
             <div className="fb-legend-dot" style={{ background: s.color }} />
             {s.label}
           </div>
@@ -167,7 +167,7 @@ function BarChart({ spots }) {
         {steps.map((v, i) => {
           const y = (i / (steps.length - 1)) * H + 5;
           return (
-            <g key={v}>
+            <g key={`grid-${i}`}>
               <line x1="40" y1={y} x2={W + 50} y2={y}
                 stroke="#f1f5f9" strokeWidth="1" />
               <text x="36" y={y + 4} fontSize="9" fill="#9ca3af"
@@ -180,7 +180,7 @@ function BarChart({ spots }) {
           const x = 40 + GAP + i * (BAR_W + GAP);
           const y = H + 5 - barH;
           return (
-            <g key={i}>
+            <g key={`bar-${i}`}>
               <rect x={x} y={y} width={BAR_W} height={barH}
                 rx="6" fill="#0d9488" opacity="0.85" />
               <text x={x + BAR_W / 2} y={H + 22}

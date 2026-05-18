@@ -9,6 +9,7 @@ const touristAnalyticsRoutes = require('./routes/touristAnalyticsRoutes');
 const establishmentRoutes    = require('./routes/establishmentRoutes');
 const qrMonitoringRoutes     = require('./routes/qrMonitoringRoutes');
 const feedbackRoutes = require("./routes/feedbackRoutes");
+const usersManagementRoutes   = require('./routes/usersManagementRoutes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/tourist-analytics', touristAnalyticsRoutes);
 app.use('/api/establishments',    establishmentRoutes);
 app.use('/api/qr-monitoring',     qrMonitoringRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use('/api/users-management',  usersManagementRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

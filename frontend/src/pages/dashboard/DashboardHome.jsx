@@ -46,7 +46,7 @@ function DonutChart({ dist, avg }) {
                 const dash = pct * circ;
                 const gap  = circ - dash;
                 const el = (
-                    <circle key={i} cx={cx} cy={cy} r={r}
+                    <circle key={`slice-${i}`} cx={cx} cy={cy} r={r}
                         fill="none" stroke={DONUT_COLORS[key]} strokeWidth={stroke}
                         strokeDasharray={`${dash} ${gap}`}
                         strokeDashoffset={-offset}
@@ -197,7 +197,7 @@ export default function DashboardHome() {
                         ) : (
                             <svg viewBox="0 0 800 230" preserveAspectRatio="none">
                                 {[0, 50, 100, 150, 200].map((y, i) => (
-                                    <g key={i}>
+                                    <g key={`grid-${i}`}>
                                         <line x1="0" y1={y} x2="800" y2={y}
                                             stroke="#f1f5f9" strokeWidth="1" />
                                         <text x="0" y={y + 4} fontSize="10" fill="#9ca3af">
@@ -220,11 +220,11 @@ export default function DashboardHome() {
                                     strokeLinejoin="round" strokeLinecap="round"
                                 />
                                 {linePoints.filter((_, i) => i % 3 === 0).map(([x, y], i) => (
-                                    <circle key={i} cx={x} cy={y} r="4"
+                                    <circle key={`point-${i}`} cx={x} cy={y} r="4"
                                         fill="#0d9488" stroke="#fff" strokeWidth="2" />
                                 ))}
                                 {visits.filter((_, i) => i % 3 === 0).map((v, i) => (
-                                    <text key={i}
+                                    <text key={`label-${i}`}
                                         x={linePoints[i * 3]?.[0] ?? 0} y={225}
                                         fontSize="8.5" fill="#9ca3af" textAnchor="middle">
                                         {v.label}
@@ -315,8 +315,8 @@ export default function DashboardHome() {
                         {!loading && topSpots.length > 0 && (
                             <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.4rem" }}>
                                 {[0, Math.round(maxBar * 0.25), Math.round(maxBar * 0.5),
-                                  Math.round(maxBar * 0.75), maxBar].map(v => (
-                                    <span key={v} style={{ fontSize: "0.72rem", color: "#9ca3af" }}>{v}</span>
+                                  Math.round(maxBar * 0.75), maxBar].map((v, i) => (
+                                    <span key={`bar-label-${i}`} style={{ fontSize: "0.72rem", color: "#9ca3af" }}>{v}</span>
                                 ))}
                             </div>
                         )}

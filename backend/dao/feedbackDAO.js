@@ -76,7 +76,7 @@ const countAll = async () => {
             )                                                    AS this_month_count
         FROM public.feedback;
     `);
-    return rows[0];
+    return parseInt(rows[0].total_feedback) || 0; 
 };
 
 // ── getDistribution ───────────────────────────────────────────────────────────
