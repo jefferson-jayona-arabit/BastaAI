@@ -43,3 +43,23 @@ export const deleteUser = async (id) => {
     });
     return handleResponse(res);
 };
+
+// POST /api/users-management
+export const createUser = async ({ fullname, email, password, role }) => {
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ fullname, email, password, role }),
+    });
+    return handleResponse(res);
+};
+
+// PUT /api/users-management/:id
+export const updateUser = async (id, { fullname, email, role, status }) => {
+    const res = await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ fullname, email, role, status }),
+    });
+    return handleResponse(res);
+};

@@ -7,6 +7,8 @@ const {
     getUserById,
     updateStatus,
     deleteUser,
+    createUser,
+    updateUser,
 } = require('../controllers/usersManagementController');
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 
@@ -25,9 +27,9 @@ router.get('/:id',
     getUserById
 );
 
-// PATCH  /api/users-management/:id/status → update status (admin only)
+// PATCH /:id/status → status-only update (admin AND lgu)  ← was admin only, that caused the 403
 router.patch('/:id/status',
-    requireRole('admin'),
+    requireRole('admin', 'lgu'),
     updateStatus
 );
 
@@ -35,6 +37,19 @@ router.patch('/:id/status',
 router.delete('/:id',
     requireRole('admin'),
     deleteUser
+);
+
+// POST /api/users-management  → create user (admin, lgu)
+router.post('/',
+    requireRole('admin', 'lgu'),
+    createUser
+);
+
+
+// PUT /:id → full update (admin AND lgu)
+router.put('/:id',
+    requireRole('admin', 'lgu'),
+    updateUser
 );
 
 module.exports = router;

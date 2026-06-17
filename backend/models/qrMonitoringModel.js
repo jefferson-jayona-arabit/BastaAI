@@ -1,55 +1,39 @@
 // backend/models/qrMonitoringModel.js
-//
-// Business-logic layer for QR Code Monitoring.
-// All SQL is delegated to QRMonitoringDAO.
-// Decryption and transforms happen here.
-// ─────────────────────────────────────────────────────────────────
+// Model — getters/setters only.
 
-const QRMonitoringDAO = require('../dao/qrMonitoringDAO');
-const { decrypt }      = require('../utils/encryption');
+class QRMonitoringModel {
+    constructor({ id=null, establishment_id=null, name=null, total_scans=0,
+                  last_scan_at=null, is_active=false } = {}) {
+        this._id               = id;
+        this._establishment_id = establishment_id;
+        this._name             = name;
+        this._total_scans      = total_scans;
+        this._last_scan_at     = last_scan_at;
+        this._is_active        = is_active;
+    }
 
-// ── Humanize last scan time ─────────────────────────────────────
-const timeAgo = (date) => {
-    if (!date) return null;
-    const diff = Math.floor((Date.now() - new Date(date)) / 1000); // seconds
-    if (diff < 60)           return `${diff} secs ago`;
-    if (diff < 3600)         return `${Math.floor(diff / 60)} mins ago`;
-    if (diff < 86400)        return `${Math.floor(diff / 3600)} hr ago`;
-    return `${Math.floor(diff / 86400)} days ago`;
-};
+    getId()              { return this._id; }
+    getEstablishmentId() { return this._establishment_id; }
+    getName()            { return this._name; }
+    getTotalScans()      { return this._total_scans; }
+    getLastScanAt()      { return this._last_scan_at; }
+    getIsActive()        { return this._is_active; }
 
-// ── Stat cards ──────────────────────────────────────────────────
-const getStatCards = async () => {
-    const [totalScans, scansToday] = await Promise.all([
-        QRMonitoringDAO.countTotalScans(),
-        QRMonitoringDAO.countScansToday(),
-    ]);
-    return { totalScans, scansToday };
-};
+    setId(v)              { this._id               = v; }
+    setEstablishmentId(v) { this._establishment_id = v; }
+    setName(v)            { this._name             = v; }
+    setTotalScans(v)      { this._total_scans      = v; }
+    setLastScanAt(v)      { this._last_scan_at     = v; }
+    setIsActive(v)        { this._is_active        = v; }
 
-// ── Top spots for line chart (decrypt names) ────────────────────
-const getTopSpots = async (limit = 7) => {
-    const rows = await QRMonitoringDAO.getTopSpots(limit);
-    return rows.map(row => ({
-        id:         row.id,
-        name:       decrypt(row.name_enc),
-        totalScans: parseInt(row.total_scans) || 0,
-        lastScanAt: row.last_scan_at,
-        lastScanAgo: timeAgo(row.last_scan_at),
-    }));
-};
+    toPlainObject() {
+        return { id: this._id, establishment_id: this._establishment_id,
+                 name: this._name, total_scans: this._total_scans,
+                 last_scan_at: this._last_scan_at, is_active: this._is_active };
+    }
 
-// ── Status list for right panel (decrypt names) ─────────────────
-const getStatusList = async () => {
-    const rows = await QRMonitoringDAO.getStatusList();
-    return rows.map(row => ({
-        id:          row.id,
-        name:        decrypt(row.name_enc),
-        totalScans:  parseInt(row.total_scans) || 0,
-        lastScanAt:  row.last_scan_at,
-        lastScanAgo: timeAgo(row.last_scan_at),
-        isActive:    row.is_active ?? false,
-    }));
-};
-
-module.exports = { getStatCards, getTopSpots, getStatusList };
+    toString() {
+        return `QRMonitoringModel{ id=${this._id}, totalScans=${this._total_scans} }`;
+    }
+}
+module.exports = QRMonitoringModel;

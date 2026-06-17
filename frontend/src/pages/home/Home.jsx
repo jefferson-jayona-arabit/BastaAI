@@ -1,6 +1,11 @@
+// pages/home/Home.jsx
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { fetchApprovedEstablishments } from "../../services/establishmentService";
 import "../../styles/home.css";
+
+const API_BASE = "http://localhost:5000";
 
 const navLinks = ["Home", "Destinations", "About", "Contact"];
 
@@ -10,21 +15,13 @@ const features = [
   { icon: "🗺️", title: "Real-Time Map Navigation", desc: "Navigate seamlessly with integrated maps showing directions, nearby attractions, and live updates on your personalized route." },
 ];
 
-const establishments = [
-  { name: "Ina Farmers Learning Site & Agri-Farm Inc.", type: "Secondary Accredited", tag: null, large: true },
-  { name: "The Somerset Inn", type: "Accredited", tag: "Primary", img: true },
-  { name: "Feric Hotel", type: "Accredited", tag: "Primary", img: true },
-  { name: "Juncook Restaurant", type: "Accredited", tag: "Secondary", img: true },
-  { name: "Mateia Cafe", type: "Accredited", tag: "Secondary", img: true },
-];
-
 const steps = [
-  { icon: "🏠", label: "Access Homepage", desc: "Open the BASTA AI app and explore main features." },
-  { icon: "🔍", label: "Explore Information", desc: "Browse destinations, culture, and local establishments." },
-  { icon: "🤖", label: "AI Assistant", desc: "Get personalized itinerary based on your preferences." },
-  { icon: "🗺️", label: "Map Navigation", desc: "Follow directions to your selected destinations." },
-  { icon: "📱", label: "QR Scanning", desc: "Scan codes at locations to record your visit." },
-  { icon: "⭐", label: "Feedback", desc: "Share ratings and comments to help improve services." },
+  { icon: "🏠", label: "Access Homepage",      desc: "Open the BASTA AI app and explore main features." },
+  { icon: "🔍", label: "Explore Information",  desc: "Browse destinations, culture, and local establishments." },
+  { icon: "🤖", label: "AI Assistant",          desc: "Get personalized itinerary based on your preferences." },
+  { icon: "🗺️", label: "Map Navigation",        desc: "Follow directions to your selected destinations." },
+  { icon: "📱", label: "QR Scanning",           desc: "Scan codes at locations to record your visit." },
+  { icon: "⭐", label: "Feedback",              desc: "Share ratings and comments to help improve services." },
 ];
 
 const bottomFeatures = [
@@ -33,20 +30,105 @@ const bottomFeatures = [
   { icon: "🗺️", label: "Interactive Map View", color: "#0d9488" },
 ];
 
+// ── Helpers ──────────────────────────────────────────────────────
+const getImageUrl = (imgPath) => {
+  if (!imgPath) return null;
+  if (imgPath.startsWith("http")) return imgPath;
+  return `${API_BASE}${imgPath}`;
+};
+
+const getAccreditationClass = (accreditation) => {
+  if (!accreditation || accreditation === "None") return "accredited";
+  if (accreditation.toLowerCase().includes("primary"))   return "primary-tag";
+  if (accreditation.toLowerCase().includes("secondary")) return "secondary-tag";
+  return "accredited";
+};
+
+const StarRating = ({ rating }) => {
+  const r = parseFloat(rating) || 0;
+  return (
+    <div className="estab-stars" aria-label={`Rating: ${r} out of 5`}>
+      {[1, 2, 3, 4, 5].map((s) => (
+        <span key={s} className={s <= Math.round(r) ? "star filled" : "star"}>★</span>
+      ))}
+      {r > 0 && <span className="star-value">{r.toFixed(1)}</span>}
+    </div>
+  );
+};
+
+// ── Establishment image with fallback ────────────────────────────
+function EstabImage({ src, alt, className }) {
+  const [errored, setErrored] = useState(false);
+  const url = getImageUrl(src);
+
+  if (!url || errored) {
+    return <div className={`estab-img-placeholder ${className ?? "gray"}`} />;
+  }
+  return (
+    <img
+      src={url}
+      alt={alt}
+      className="estab-real-img"
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
+// ── Skeleton card ────────────────────────────────────────────────
+function EstabSkeleton({ large }) {
+  return (
+    <div className={`estab-card ${large ? "large" : "small"} estab-skeleton`}>
+      <div className="estab-img-placeholder skeleton-pulse" />
+      <div className="estab-card-body">
+        <div className="skeleton-line short" />
+        <div className="skeleton-line long"  />
+        <div className="skeleton-line med"   />
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+// Main Component
+// ────────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled,        setScrolled]        = useState(false);
+  const [menuOpen,        setMenuOpen]        = useState(false);
+  const [establishments,  setEstablishments]  = useState([]);
+  const [estabLoading,    setEstabLoading]    = useState(true);
+  const [estabError,      setEstabError]      = useState("");
 
+  // Navbar scroll effect
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Fetch approved establishments
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchApprovedEstablishments();
+        setEstablishments(data);
+      } catch (err) {
+        setEstabError("Could not load establishments.");
+      } finally {
+        setEstabLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  // Split: first card is "large", rest are "small"
+  const [featured, ...rest] = establishments;
+  const smallCards = rest.slice(0, 4); // show max 4 small cards
+
   return (
     <div className="home">
-      {/* NAVBAR */}
+
+      {/* ── NAVBAR ──────────────────────────────────────────── */}
       <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
         <div className="nav-inner">
           <div className="nav-logo">
@@ -56,12 +138,14 @@ export default function Home() {
           <div className={`nav-links ${menuOpen ? "open" : ""}`}>
             {navLinks.map((l) => (
               <a key={l}
-                  href={`#${l.toLowerCase()}`}
-                  className="nav-link"
-                  onClick={l === "Destinations" ? (e) => { e.preventDefault(); navigate("/destinations"); } : undefined}
-                >
-                  {l}
-                </a>
+                href={`#${l.toLowerCase()}`}
+                className="nav-link"
+                onClick={l === "Destinations"
+                  ? (e) => { e.preventDefault(); navigate("/destinations"); }
+                  : undefined}
+              >
+                {l}
+              </a>
             ))}
           </div>
           <button className="nav-login-btn" onClick={() => navigate("/login")}>Login</button>
@@ -69,7 +153,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="hero" id="home">
         <div className="hero-overlay" />
         <div className="hero-content">
@@ -85,7 +169,7 @@ export default function Home() {
         <div className="hero-watch">Watch Video</div>
       </section>
 
-      {/* FEATURES */}
+      {/* ── FEATURES ─────────────────────────────────────────── */}
       <section className="section features-section">
         <div className="section-inner">
           <p className="section-tag">PLATFORM FEATURES</p>
@@ -103,54 +187,111 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ESTABLISHMENTS */}
+      {/* ── ESTABLISHMENTS ───────────────────────────────────── */}
       <section className="section estab-section" id="destinations">
         <div className="section-inner">
           <div className="estab-header">
             <h2 className="section-title">Explore Our Accredited<br />Establishments</h2>
-            <p className="estab-desc">All establishments are DOT accredited, ensuring quality standards and excellent service for your visit.</p>
+            <p className="estab-desc">
+              All establishments are DOT accredited, ensuring quality standards and excellent service for your visit.
+            </p>
           </div>
-          <div className="estab-grid">
-            {/* Large card */}
-            <div className="estab-card large">
-              <div className="estab-img-placeholder green" />
-              <div className="estab-card-body">
-                <span className="estab-badge secondary">Secondary Accredited</span>
-                <h4 className="estab-name">Ina Farmers Learning Site & Agri-Farm Inc.</h4>
-                <p className="estab-loc">📍 Agri-Lorem Calzada, Barotac Nuevo, Iloilo</p>
-                <button className="estab-btn outline-dark">View Details</button>
+
+          {/* ── Error state ──────────────────────────────────── */}
+          {estabError && !estabLoading && (
+            <div className="estab-error">
+              ⚠️ {estabError}
+            </div>
+          )}
+
+          {/* ── Loading skeleton ──────────────────────────────── */}
+          {estabLoading && (
+            <div className="estab-grid">
+              <EstabSkeleton large />
+              <div className="estab-right">
+                <EstabSkeleton /><EstabSkeleton />
+                <EstabSkeleton /><EstabSkeleton />
               </div>
             </div>
-            {/* Right grid */}
-            <div className="estab-right">
-              {[
-                { name: "The Somerset Inn", tag: "Primary" },
-                { name: "Feric Hotel", tag: "Primary" },
-                { name: "Juncook Restaurant", tag: "Secondary" },
-                { name: "Mateia Cafe", tag: "Secondary" },
-              ].map((e) => (
-                <div className="estab-card small" key={e.name}>
-                  <div className="estab-img-placeholder gray" />
-                  <div className="estab-card-body">
-                    <div className="estab-card-top">
-                      <span className="estab-badge accredited">Accredited</span>
-                      <span className={`estab-badge ${e.tag === "Primary" ? "primary-tag" : "secondary-tag"}`}>{e.tag}</span>
-                    </div>
-                    <h4 className="estab-name small">{e.name}</h4>
-                    <p className="estab-loc small">📍 Acab, Barotac Nuevo, Iloilo</p>
-                    <button className="estab-explore-btn">Explore</button>
-                  </div>
-                </div>
-              ))}
+          )}
+
+          {/* ── Empty state ───────────────────────────────────── */}
+          {!estabLoading && !estabError && establishments.length === 0 && (
+            <div className="estab-empty">
+              <span>🏪</span>
+              <p>No accredited establishments available yet.</p>
             </div>
-          </div>
+          )}
+
+          {/* ── Real data ─────────────────────────────────────── */}
+          {!estabLoading && !estabError && establishments.length > 0 && (
+            <div className="estab-grid">
+
+              {/* Large featured card */}
+              <div className="estab-card large">
+                <EstabImage
+                  src={featured.primaryImage}
+                  alt={featured.name}
+                  className="green"
+                />
+                <div className="estab-card-body">
+                  <span className={`estab-badge ${getAccreditationClass(featured.accreditation)}`}>
+                    {featured.accreditation && featured.accreditation !== "None"
+                      ? featured.accreditation
+                      : "Accredited"}
+                  </span>
+                  <h4 className="estab-name">{featured.name}</h4>
+                  <p className="estab-loc">📍 {featured.address ?? "Barotac Nuevo, Iloilo"}</p>
+                  {featured.rating && <StarRating rating={featured.rating} />}
+                  <button
+                    className="estab-btn outline-dark"
+                    onClick={() => navigate(`/establishments/${featured.id}`)}
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+
+              {/* Small cards (up to 4) */}
+              <div className="estab-right">
+                {smallCards.map((e) => (
+                  <div className="estab-card small" key={e.id}>
+                    <EstabImage src={e.primaryImage} alt={e.name} className="gray" />
+                    <div className="estab-card-body">
+                      <div className="estab-card-top">
+                        <span className="estab-badge accredited">Accredited</span>
+                        {e.accreditation && e.accreditation !== "None" && (
+                          <span className={`estab-badge ${getAccreditationClass(e.accreditation)}`}>
+                            {e.accreditation}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="estab-name small">{e.name}</h4>
+                      <p className="estab-loc small">📍 {e.address ?? "Barotac Nuevo, Iloilo"}</p>
+                      {e.rating && <StarRating rating={e.rating} />}
+                      <button
+                        className="estab-explore-btn"
+                        onClick={() => navigate(`/establishments/${e.id}`)}
+                      >
+                        Explore
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          )}
+
           <div className="estab-view-all">
-            <button className="view-all-btn">View All Establishments →</button>
+            <button className="view-all-btn" onClick={() => navigate("/establishments")}>
+              View All Establishments →
+            </button>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* ── HOW IT WORKS ─────────────────────────────────────── */}
       <section className="section how-section">
         <div className="section-inner">
           <h2 className="section-title center">How BASTA AI Works</h2>
@@ -170,7 +311,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ABOUT MUNICIPALITY */}
+      {/* ── ABOUT ────────────────────────────────────────────── */}
       <section className="section about-section" id="about">
         <div className="section-inner about-inner">
           <div className="about-text">
@@ -190,7 +331,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* ── CTA ──────────────────────────────────────────────── */}
       <section className="cta-section">
         <div className="section-inner">
           <h2 className="cta-title">Start Your Journey Today</h2>
@@ -207,7 +348,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ───────────────────────────────────────────── */}
       <footer className="footer" id="contact">
         <div className="footer-inner">
           <div className="footer-brand">
@@ -248,6 +389,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

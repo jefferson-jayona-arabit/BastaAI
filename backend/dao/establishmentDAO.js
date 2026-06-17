@@ -144,6 +144,23 @@ const EstablishmentDAO = {
             `DELETE FROM establishments WHERE id = $1`, [id]
         );
     },
+    // ── Fetch approved establishments with their primary image ───
+    findApprovedWithImage: async (limit = 5) => {
+        const { rows } = await pool.query(
+            `SELECT
+                e.id, e.name, e.type, e.owner_name,
+                e.address, e.accreditation, e.rating,
+                ei.image_url AS primary_image
+            FROM establishments e
+            LEFT JOIN establishment_images ei
+                ON ei.establishment_id = e.id AND ei.is_primary = true
+            WHERE e.status = 'Approved'
+            ORDER BY e.created_at DESC
+            LIMIT $1`,
+            [limit]
+        );
+        return rows;
+    },
 };
 
 module.exports = EstablishmentDAO;

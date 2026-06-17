@@ -83,6 +83,37 @@ const UsersManagementDAO = {
     deleteById: async (id) => {
         await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
     },
+    
+    // Add to UsersManagementDAO object
+
+    createUser: async ({ fullname, email, passwordHash, role, status }) => {
+        const { rows } = await pool.query(
+            `INSERT INTO users (fullname, email, password, role, status, created_at)
+            VALUES ($1, $2, $3, $4, $5, NOW())
+            RETURNING id, role, status, created_at`,
+            [fullname, email, passwordHash, role, status]
+        );
+        return rows[0] ?? null;
+    },
+
+    emailExists: async (encryptedEmail) => {
+        const { rows } = await pool.query(
+            `SELECT id FROM users WHERE email = $1 LIMIT 1`,
+            [encryptedEmail]
+        );
+        return rows.length > 0;
+    },
+    // ── Update user fullname, email, role, status ────────────────
+    updateUser: async (id, { fullname, email, role, status }) => {
+        const { rows } = await pool.query(
+            `UPDATE users
+            SET fullname = $1, email = $2, role = $3, status = $4
+            WHERE id = $5
+            RETURNING id, role, status`,
+            [fullname, email, role, status, id]
+        );
+        return rows[0] ?? null;
+    },
 };
 
 module.exports = UsersManagementDAO;

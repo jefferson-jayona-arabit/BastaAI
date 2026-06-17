@@ -1,15 +1,12 @@
-// backend/controllers/qrMonitoringController.js
-//
-// Handles HTTP requests for the QR Code Monitoring page.
-// Business logic delegated to the model layer.
-// ─────────────────────────────────────────────────────────────────
 
-const qrMonitoringModel = require('../models/qrMonitoringModel');
+const qrMonitoringService = require('../serviceImplementation/qrMonitoringServiceImpl');
 
-// ── GET /api/qr-monitoring/stats ────────────────────────────────
+
+
+// Then update all method calls:
 const getStatCards = async (req, res) => {
     try {
-        const data = await qrMonitoringModel.getStatCards();
+        const data = await qrMonitoringService.getStatCards();
         res.json(data);
     } catch (err) {
         console.error('QR getStatCards error:', err.message);
@@ -17,11 +14,10 @@ const getStatCards = async (req, res) => {
     }
 };
 
-// ── GET /api/qr-monitoring/top-spots?limit=7 ────────────────────
 const getTopSpots = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 7;
-        const data  = await qrMonitoringModel.getTopSpots(limit);
+        const data  = await qrMonitoringService.getTopSpots(limit);
         res.json(data);
     } catch (err) {
         console.error('QR getTopSpots error:', err.message);
@@ -29,10 +25,9 @@ const getTopSpots = async (req, res) => {
     }
 };
 
-// ── GET /api/qr-monitoring/status-list ──────────────────────────
 const getStatusList = async (req, res) => {
     try {
-        const data = await qrMonitoringModel.getStatusList();
+        const data = await qrMonitoringService.getStatusList();
         res.json(data);
     } catch (err) {
         console.error('QR getStatusList error:', err.message);

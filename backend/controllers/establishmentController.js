@@ -1,50 +1,12 @@
 // backend/controllers/establishmentController.js
-//
-// Handles HTTP requests for the Establishments page.
-// Business logic and DB queries are delegated to the model layer.
-// ─────────────────────────────────────────────────────────────────
 
-const establishmentModel = require('../models/establishmentModel');
-const { encrypt, decrypt } = require('../utils/encryption');
-
-// ── Decrypt helper for a single establishment row ───────────────
-const decryptRow = (row) => ({
-    id:            row.id,
-    name:          row.name       ? decrypt(row.name)       : null,
-    type:          row.type       ? decrypt(row.type)       : null,
-    owner:         row.owner_name ? decrypt(row.owner_name) : null,
-    address:       row.address    ? decrypt(row.address)    : null,
-    description:   row.description? decrypt(row.description): null,
-    latitude:      row.latitude   ? decrypt(row.latitude)   : null,
-    longitude:     row.longitude  ? decrypt(row.longitude)  : null,
-    accreditation: row.accreditation,
-    status:        row.status,
-    rating:        row.rating     ? parseFloat(row.rating)  : null,
-    submitted:     row.submitted_at,
-    created_at:    row.created_at,
-    user_id:       row.user_id,
-});
+const establishmentService = require('../serviceImplementation/establishmentServiceImpl');
 
 // ── GET /api/establishments ─────────────────────────────────────
-// Returns all establishments (decrypted) + stat counts
 const getAllEstablishments = async (req, res) => {
     try {
-        const [rows, counts] = await Promise.all([
-            establishmentModel.getAllEstablishments(),
-            establishmentModel.countByStatus(),
-        ]);
-
-        const establishments = rows.map(decryptRow);
-
-        res.json({
-            establishments,
-            stats: {
-                total:    parseInt(counts.total)            || 0,
-                approved: parseInt(counts.approved)         || 0,
-                pending:  parseInt(counts.pending)          || 0,
-                new:      parseInt(counts.new_registrations)|| 0,
-            },
-        });
+        const data = await establishmentService.getAll();
+        res.json(data);
     } catch (err) {
         console.error('getAllEstablishments error:', err.message);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -54,9 +16,9 @@ const getAllEstablishments = async (req, res) => {
 // ── GET /api/establishments/:id ─────────────────────────────────
 const getEstablishmentById = async (req, res) => {
     try {
-        const row = await establishmentModel.getEstablishmentById(req.params.id);
+        const row = await establishmentService.getById(req.params.id);
         if (!row) return res.status(404).json({ error: 'Establishment not found.' });
-        res.json(decryptRow(row));
+        res.json(row);
     } catch (err) {
         console.error('getEstablishmentById error:', err.message);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -65,32 +27,17 @@ const getEstablishmentById = async (req, res) => {
 
 // ── POST /api/establishments ────────────────────────────────────
 const createEstablishment = async (req, res) => {
-    const {
-        name, type, owner_name, address,
-        description, latitude, longitude, accreditation,
-    } = req.body;
+    const { name, type, owner_name, address, description, latitude, longitude, accreditation } = req.body;
 
     if (!name || !type || !owner_name) {
         return res.status(400).json({ error: 'Name, type, and owner are required.' });
     }
 
     try {
-        const data = {
-            user_id:       req.user.id,
-            name:          encrypt(name),
-            type:          encrypt(type),
-            owner_name:    encrypt(owner_name),
-            address:       address     ? encrypt(address)     : null,
-            description:   description ? encrypt(description) : null,
-            latitude:      latitude    ? encrypt(String(latitude))  : null,
-            longitude:     longitude   ? encrypt(String(longitude)) : null,
-            accreditation: accreditation || 'None',
-        };
-
-        const row = await establishmentModel.createEstablishment(data);
+        const establishment = await establishmentService.create(req.body, req.user.id);
         res.status(201).json({
             message: 'Establishment created successfully.',
-            establishment: decryptRow(row),
+            establishment,
         });
     } catch (err) {
         console.error('createEstablishment error:', err.message);
@@ -101,33 +48,15 @@ const createEstablishment = async (req, res) => {
 // ── PUT /api/establishments/:id ─────────────────────────────────
 const updateEstablishment = async (req, res) => {
     try {
-        const existing = await establishmentModel.getEstablishmentById(req.params.id);
-        if (!existing) return res.status(404).json({ error: 'Establishment not found.' });
-
-        const {
-            name, type, owner_name, address,
-            description, latitude, longitude, accreditation,
-        } = req.body;
-
-        const data = {
-            name:          name        ? encrypt(name)              : existing.name,
-            type:          type        ? encrypt(type)              : existing.type,
-            owner_name:    owner_name  ? encrypt(owner_name)        : existing.owner_name,
-            address:       address     ? encrypt(address)           : existing.address,
-            description:   description ? encrypt(description)       : existing.description,
-            latitude:      latitude    ? encrypt(String(latitude))  : existing.latitude,
-            longitude:     longitude   ? encrypt(String(longitude)) : existing.longitude,
-            accreditation: accreditation ?? existing.accreditation,
-        };
-
-        const row = await establishmentModel.updateEstablishment(req.params.id, data);
+        const establishment = await establishmentService.update(req.params.id, req.body);
         res.json({
             message: 'Establishment updated successfully.',
-            establishment: decryptRow(row),
+            establishment,
         });
     } catch (err) {
         console.error('updateEstablishment error:', err.message);
-        res.status(500).json({ error: 'Internal Server Error' });
+        const status = err.message === 'Establishment not found.' ? 404 : 500;
+        res.status(status).json({ error: err.message });
     }
 };
 
@@ -141,7 +70,7 @@ const updateStatus = async (req, res) => {
     }
 
     try {
-        const row = await establishmentModel.updateEstablishmentStatus(req.params.id, status);
+        const row = await establishmentService.updateStatus(req.params.id, status);
         if (!row) return res.status(404).json({ error: 'Establishment not found.' });
         res.json({ message: `Status updated to ${status}.`, id: row.id, status: row.status });
     } catch (err) {
@@ -153,13 +82,22 @@ const updateStatus = async (req, res) => {
 // ── DELETE /api/establishments/:id ─────────────────────────────
 const deleteEstablishment = async (req, res) => {
     try {
-        const existing = await establishmentModel.getEstablishmentById(req.params.id);
-        if (!existing) return res.status(404).json({ error: 'Establishment not found.' });
-
-        await establishmentModel.deleteEstablishment(req.params.id);
+        await establishmentService.delete(req.params.id);
         res.json({ message: 'Establishment deleted successfully.' });
     } catch (err) {
         console.error('deleteEstablishment error:', err.message);
+        const status = err.message === 'Establishment not found.' ? 404 : 500;
+        res.status(status).json({ error: err.message });
+    }
+};
+// ── GET /api/establishments/public?limit=5 ──────────────────────
+const getApprovedPublic = async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 5;
+        const data  = await establishmentService.getApprovedPublic(limit);
+        res.json(data);
+    } catch (err) {
+        console.error('getApprovedPublic error:', err.message);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
@@ -171,4 +109,5 @@ module.exports = {
     updateEstablishment,
     updateStatus,
     deleteEstablishment,
+    getApprovedPublic,
 };

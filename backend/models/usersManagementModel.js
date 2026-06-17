@@ -1,77 +1,42 @@
 // backend/models/usersManagementModel.js
-//
-// Business-logic layer for Users Management.
-// All SQL is delegated to UsersManagementDAO.
-// Decryption and transforms happen here.
-// ─────────────────────────────────────────────────────────────────
+// Model — getters/setters only.
 
-const UsersManagementDAO = require('../dao/usersManagementDAO');
-const { decrypt }         = require('../utils/encryption');
+class UsersManagementModel {
+    constructor({ id=null, fullname=null, email=null, role=null,
+                  status=null, created_at=null, visit_count=0 } = {}) {
+        this._id          = id;
+        this._fullname    = fullname;
+        this._email       = email;
+        this._role        = role;
+        this._status      = status;
+        this._created_at  = created_at;
+        this._visit_count = visit_count;
+    }
 
-// ── Get initials from decrypted fullname ────────────────────────
-const getInitials = (fullname) => {
-    if (!fullname) return '??';
-    const parts = fullname.trim().split(' ').filter(Boolean);
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
+    getId()         { return this._id; }
+    getFullname()   { return this._fullname; }
+    getEmail()      { return this._email; }
+    getRole()       { return this._role; }
+    getStatus()     { return this._status; }
+    getCreatedAt()  { return this._created_at; }
+    getVisitCount() { return this._visit_count; }
 
-// ── Decrypt a single user row ───────────────────────────────────
-const decryptUser = (row) => {
-    const fullname = row.fullname ? decrypt(row.fullname) : 'Unknown';
-    const email    = row.email    ? decrypt(row.email)    : '';
-    return {
-        id:         row.id,
-        fullname,
-        email,
-        initials:   getInitials(fullname),
-        role:       row.role,
-        status:     row.status,
-        joined:     row.created_at
-            ? new Date(row.created_at).toISOString().split('T')[0]
-            : null,
-        visits:     parseInt(row.visit_count) || null,
-    };
-};
+    setId(v)          { this._id          = v; }
+    setFullname(v)    { this._fullname    = v; }
+    setEmail(v)       { this._email       = v; }
+    setRole(v)        { this._role        = v; }
+    setStatus(v)      { this._status      = v; }
+    setCreatedAt(v)   { this._created_at  = v; }
+    setVisitCount(v)  { this._visit_count = v; }
 
-// ── Get all users (decrypted) + summary counts ──────────────────
-const getAllUsers = async () => {
-    const [rows, roleCounts] = await Promise.all([
-        UsersManagementDAO.findAll(),
-        UsersManagementDAO.countByRole(),
-    ]);
+    toPlainObject() {
+        return { id: this._id, fullname: this._fullname, email: this._email,
+                 role: this._role, status: this._status,
+                 created_at: this._created_at, visit_count: this._visit_count };
+    }
 
-    return {
-        users: rows.map(decryptUser),
-        summary: {
-            total:         parseInt(roleCounts.total)         || 0,
-            tourist:       parseInt(roleCounts.tourist)       || 0,
-            admin:         parseInt(roleCounts.admin)         || 0,
-            lgu:           parseInt(roleCounts.lgu)           || 0,
-            establishment: parseInt(roleCounts.establishment) || 0,
-        },
-    };
-};
-
-// ── Get single user (decrypted) ─────────────────────────────────
-const getUserById = async (id) => {
-    const row = await UsersManagementDAO.findById(id);
-    return row ? decryptUser(row) : null;
-};
-
-// ── Update user status ──────────────────────────────────────────
-const updateUserStatus = async (id, status) => {
-    return UsersManagementDAO.updateStatus(id, status);
-};
-
-// ── Delete user ─────────────────────────────────────────────────
-const deleteUser = async (id) => {
-    return UsersManagementDAO.deleteById(id);
-};
-
-module.exports = {
-    getAllUsers,
-    getUserById,
-    updateUserStatus,
-    deleteUser,
-};
+    toString() {
+        return `UsersManagementModel{ id=${this._id}, role='${this._role}' }`;
+    }
+}
+module.exports = UsersManagementModel;

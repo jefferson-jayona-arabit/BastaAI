@@ -1,46 +1,35 @@
-// backend/models/touristAnalyticsModel.js
-//
-// Business-logic layer for tourist analytics.
-// All SQL is delegated to TouristAnalyticsDAO.
-// Transforms, defaults, and cross-table logic go here.
-// ─────────────────────────────────────────────────────────────────
+﻿// backend/models/touristAnalyticsModel.js
+// Model — getters/setters only.
 
-const TouristAnalyticsDAO = require('../dao/touristAnalyticsDAO');
-const { decrypt }          = require('../utils/encryption');
+class TouristAnalyticsModel {
+    constructor({ id=null, name=null, total_scans=0, label=null,
+                  unique_visitors=0 } = {}) {
+        this._id              = id;
+        this._name            = name;
+        this._total_scans     = total_scans;
+        this._label           = label;
+        this._unique_visitors = unique_visitors;
+    }
 
-// ── Summary stat cards ──────────────────────────────────────────
-const getStatCards = async () => {
-    const [totalUsers, totalVisits, dailyAvg, peakDay] = await Promise.all([
-        TouristAnalyticsDAO.countTouristUsers(),
-        TouristAnalyticsDAO.countMonthlyVisits(),
-        TouristAnalyticsDAO.getDailyAverage(),
-        TouristAnalyticsDAO.getPeakDayCount(),
-    ]);
-    return { totalUsers, totalVisits, dailyAvg, peakDay };
-};
+    getId()             { return this._id; }
+    getName()           { return this._name; }
+    getTotalScans()     { return this._total_scans; }
+    getLabel()          { return this._label; }
+    getUniqueVisitors() { return this._unique_visitors; }
 
-// ── Daily visit trend for line chart ───────────────────────────
-const getDailyTrend = async () => {
-    const rows = await TouristAnalyticsDAO.getDailyVisitTrend();
-    return rows.map(row => ({
-        label:          row.label,
-        uniqueVisitors: parseInt(row.unique_visitors) || 0,
-        totalScans:     parseInt(row.total_scans)     || 0,
-    }));
-};
+    setId(v)             { this._id              = v; }
+    setName(v)           { this._name            = v; }
+    setTotalScans(v)     { this._total_scans     = v; }
+    setLabel(v)          { this._label           = v; }
+    setUniqueVisitors(v) { this._unique_visitors = v; }
 
-// ── Top destinations for bar chart (decrypt names) ──────────────
-const getTopDestinations = async (limit = 5) => {
-    const rows = await TouristAnalyticsDAO.getTopDestinations(limit);
-    return rows.map(row => ({
-        id:         row.id,
-        name:       decrypt(row.name_enc),
-        totalScans: parseInt(row.total_scans) || 0,
-    }));
-};
+    toPlainObject() {
+        return { id: this._id, name: this._name, total_scans: this._total_scans,
+                 label: this._label, unique_visitors: this._unique_visitors };
+    }
 
-module.exports = {
-    getStatCards,
-    getDailyTrend,
-    getTopDestinations,
-};
+    toString() {
+        return `TouristAnalyticsModel{ id=${this._id}, totalScans=${this._total_scans} }`;
+    }
+}
+module.exports = TouristAnalyticsModel;

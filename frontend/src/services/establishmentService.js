@@ -63,3 +63,16 @@ export const deleteEstablishment = async (id) => {
     });
     return handleResponse(res);
 };
+
+ 
+// GET /api/establishments/public?limit=5
+// No auth header needed — this is a public endpoint
+export const fetchApprovedEstablishments = async (limit = 5) => {
+    const res = await fetch(`${API_URL}/public?limit=${limit}`);
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to load establishments.");
+    }
+    return res.json();
+};
+ 
